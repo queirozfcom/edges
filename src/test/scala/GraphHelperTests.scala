@@ -17,7 +17,7 @@ class GraphHelperTests extends FlatSpec with Matchers {
 
     val distances = GraphHelper.getDistances("2", edgeIndex)
 
-    assert(List(DistanceToNode("3", 1), DistanceToNode("4", 2), DistanceToNode("5", 3)).toSet == distances.toSet)
+    assert(distances.toSet == List(DistanceToNode("3", 1), DistanceToNode("4", 2), DistanceToNode("5", 3)).toSet)
 
   }
 
@@ -98,6 +98,23 @@ class GraphHelperTests extends FlatSpec with Matchers {
     assert(GraphHelper.getDistances("2", edgeIndex).toSet == List(DistanceToNode("3", 1), DistanceToNode("4", 1)).toSet)
     assert(GraphHelper.getDistances("3", edgeIndex).toSet == List(DistanceToNode("2", 1), DistanceToNode("4", 1)).toSet)
     assert(GraphHelper.getDistances("4", edgeIndex).toSet == List(DistanceToNode("2", 1), DistanceToNode("3", 1)).toSet)
+  }
+
+  "a bigger graph sample" should "have the distances corrected evaluated" in {
+
+    val lines = List("6 4", "4 3", "4 5", "3 2", "2 5", "1 2", "1 5")
+
+    val edges = GraphHelper.buildDirectedEdges(lines)
+
+    val edgeIndex = GraphHelper.buildOutgoingEdgeIndex(edges)
+
+    assert(
+      GraphHelper.getDistances("1", edgeIndex).toSet == List(DistanceToNode("4", 2),
+                                                             DistanceToNode("5", 1),
+                                                             DistanceToNode("6", 3),
+                                                             DistanceToNode("2", 1),
+                                                             DistanceToNode("3", 2)).toSet)
+
   }
 
 }

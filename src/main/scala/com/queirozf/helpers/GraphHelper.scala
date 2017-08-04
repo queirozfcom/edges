@@ -45,35 +45,28 @@ object GraphHelper {
     */
   def getDistances(sourceNode: String, edgeIndex: Map[String, List[DirectedEdge]]): List[DistanceToNode] = {
 
-    val visitedEdges = mutable.Set.empty[DirectedEdge]
+    val visitedEdges = mutable.Set.empty[(DirectedEdge, Int)]
 
     def getDistancesIter(currentSourceNode: String,
-                         currentDistances: List[DistanceToNode],
-                         maxDistance: Int): List[DistanceToNode] = {
+                          currentDistances: List[DistanceToNode],
+                          distanceValue: Int): List[DistanceToNode] = {
 
       edgeIndex.get(currentSourceNode) match {
         case Some(outgoingEdges) => {
 
-          val unvisitedNewEdges = outgoingEdges.filterNot(outgoingEdge => visitedEdges.contains(outgoingEdge))
+          // an edge only counts as "visited" is it's been visited by a path with a size less than or equal to the current one.
+          val unvisitedNewEdges = outgoingEdges.filterNot(outgoingEdge => visitedEdges.exists(visit => visit._1 == outgoingEdge && (visit._2 <= distanceValue)))
 
-          val newDistances = currentDistances ++ unvisitedNewEdges.map(outgoingEdge =>
-            DistanceToNode(outgoingEdge.toLabel, maxDistance))
+          val newDistances = currentDistances ++ unvisitedNewEdges.map(outgoingEdge => DistanceToNode(outgoingEdge.toLabel, distanceValue))
 
-          unvisitedNewEdges.foreach(visitedEdges.add)
+          unvisitedNewEdges.foreach(edge => visitedEdges.add((edge, distanceValue)))
 
           if (unvisitedNewEdges.nonEmpty) {
-
             // recursion step: visit the next nodes, pointed to by the current node
-            val updatedDistances = newDistances ++ unvisitedNewEdges.flatMap(edge => getDistancesIter(edge.toLabel, newDistances, maxDistance + 1))
-
-            // make sure only the shortest path between two nodes is kept
-            updatedDistances
-              .groupBy { case DistanceToNode(targetLabel, _) => targetLabel }
-              .map { case (targetLabel, distances) => (targetLabel, distances.map(_.value).min) }
-              .map { case (label, value) => DistanceToNode(label, value) }
-              .toList
-              .distinct
-              .filterNot(distance => distance.targetLabel == currentSourceNode)
+            val updatedDistances = newDistances ++ unvisitedNewEdges.flatMap { edge =>
+              getDistancesIter(edge.toLabel, newDistances, distanceValue + 1)
+            }
+            pruneDistances(updatedDistances, currentSourceNode)
 
           } else newDistances // base case: all edges have been visited
         }
@@ -81,8 +74,24 @@ object GraphHelper {
       }
     }
 
-    getDistancesIter(sourceNode, List.empty[DistanceToNode], maxDistance = 1)
+    getDistancesIter(sourceNode, List.empty[DistanceToNode], distanceValue = 1)
 
   }
 
+  /**
+    * Remove all values that aren't the shortest distance to a node.
+    *
+    * @param allDistances
+    * @param sourceNode
+    * @return
+    */
+  private def pruneDistances(allDistances: List[DistanceToNode], sourceNode: String): List[DistanceToNode] = {
+    allDistances
+      .groupBy { case DistanceToNode(targetLabel, _) => targetLabel }
+      .map { case (targetLabel, distances) => (targetLabel, distances.map(_.value).min) }
+      .map { case (label, value) => DistanceToNode(label, value) }
+      .toList
+      .distinct
+      .filterNot(distance => distance.targetLabel == sourceNode)
+  }
 }

@@ -18,11 +18,12 @@ object Main extends App {
 
   val edges = GraphHelper.buildDirectedEdges(lines)
 
-  val edgeIndex = GraphHelper.buildOutgoingEdgeIndex(edges)
+  val outgoingEdgeIndex = GraphHelper.buildOutgoingEdgeIndex(edges)
 
-  val sorted = uniqueNodeLabels.toList
-    .map(nodeLabel => (nodeLabel, GraphHelper.getDistances(nodeLabel, edgeIndex)))
+  val sorted = uniqueNodeLabels
+    .map(nodeLabel => (nodeLabel, GraphHelper.getDistances(nodeLabel, outgoingEdgeIndex)))
     .map { case (nodeLabel, distances) => (nodeLabel, distances.map(distance => distance.value).sum) }
+    .toList
     .sortBy {
       case (_, distanceSum) => distanceSum
     }
