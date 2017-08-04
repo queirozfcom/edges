@@ -9,7 +9,7 @@ edges
 
 - `$ sbt test` // run tests
 
-- `$ sbt run`  // run main class (takes about 10 seconds, outputs to STDOUT)
+- `$ sbt run`  // run main class (takes a long time to process large files; use `.par` if you're on a multi-core machine)
 
 
 ### Suposições
